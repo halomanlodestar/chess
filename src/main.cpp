@@ -12,71 +12,56 @@ const int SCREEN_HEIGHT = 1000;
 
 using namespace std;
 
-SDL_Window *window = NULL;
-SDL_Surface *windowSurface = NULL;
-SDL_Renderer *renderer = NULL;
+const int WIDHT = 1000;
+const int HEIGHT = 1000;
+
+SDL_Window *window = nullptr;
+SDL_Renderer *renderer = nullptr;
 
 bool init() {
-  if (SDL_Init(SDL_INIT_EVERYTHING) < 0) {
+  if (SDL_Init(SDL_INIT_EVERYTHING) == 0) {
     cout << SDL_GetError() << endl;
 
     return false;
   }
 
-  window = SDL_CreateWindow("My Window", SDL_WINDOWPOS_CENTERED,
-                            SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH, SCREEN_HEIGHT,
-                            SDL_WINDOW_SHOWN);
+  window = SDL_CreateWindow("Chess Engine", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDHT, HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
 
-  if (window != NULL) {
+  if (window == nullptr) {
     cout << SDL_GetError() << endl;
 
     return false;
   }
 
-  windowSurface = SDL_GetWindowSurface(window);
+  renderer = SDL_CreateRenderer(window, -1, SDL_WINDOW_SHOWN);
 
-  if (windowSurface == NULL) {
+  if (renderer == nullptr) {
     cout << SDL_GetError() << endl;
+
+    SDL_DestroyWindow(window);
 
     return false;
   }
-
-  renderer = SDL_GetRenderer(window);
 
   return true;
 }
 
-bool loadMedia() {
-  return true;
-}
+void render() {}
 
-void close() {
+void eventLoop() {
 
-  bool quit = false;
+  bool running = true;
 
-  while (!quit) {
+  while (running) {
     SDL_Event e;
 
-    while (SDL_PollEvent(&e) != 0) {
-      if (e.type == SDL_QUIT) quit = true;
-    }
+    while () {}
   }
 
-  SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
-  SDL_RenderClear(renderer);
-  SDL_DestroyWindow(window);
 }
 
+void close() {}
+
 int main() {
-
-  init();
-  loadMedia();
-
-  SDL_Rect outlineRect = {SCREEN_WIDTH / 6, SCREEN_HEIGHT / 6,
-                          SCREEN_HEIGHT * 2 / 3, SCREEN_HEIGHT * 2 / 3};
-  SDL_SetRenderDrawColor(renderer, 0x00, 0xFF, 0x00, 0xFF);
-  SDL_RenderDrawRect(renderer, &outlineRect);
-
-  close();
   return 0;
 }
