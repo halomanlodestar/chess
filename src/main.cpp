@@ -13,6 +13,21 @@
 
 using namespace std;
 
+const int SQUARES = 8;
+
+const int TypeMask = 0b00111;
+const int ColorMask = 0b11000;
+
+string pieceImages[] = {
+    "",
+    "pawn",
+    "bishop",
+    "knight",
+    "rook",
+    "queen",
+    "king"
+};
+
 const int WIDHT = 1500;
 const int HEIGHT = 1000;
 
@@ -20,19 +35,22 @@ const int HEIGHT = 1000;
 const SDL_Color black = {0, 68, 116, 255};
 const SDL_Color white = {251, 245, 222, 255};
 
-enum PieceColor { WHITE, BLACK };
+enum PieceColor { WHITE = 0b01000, BLACK = 0b10000 };
 
 enum PieceType {
-  PAWN,
-  BISHOP,
-  KNIGHT,
-  ROOK,
-  QUEEN,
-  KING
+  None = 0b00000,
+  Pawn = 0b00001,
+  Bishop = 0b00010,
+  Knight = 0b00011,
+  Rook = 0b00100,
+  Queen = 0b00101,
+  King = 0b00110
 };
 
 SDL_Window *window = nullptr;
 SDL_Renderer *renderer = nullptr;
+
+int board[8][8];
 
 bool init() {
   if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
@@ -71,13 +89,77 @@ bool init() {
   return true;
 }
 
-void render() {
+void fillInChessPieces() {
 
-  int SQUARES = 8;
-  int w, h;
+  int blackPawnIdx = 1;
+  int whitePawnIdx = 6;
 
-  // get the size of window to determine the board size
-  SDL_GetWindowSize(window, &w, &h);
+  for (int i = 0; i < 8; i++) {
+    for (int j = 0; j < 8; j++) {
+
+      board[i][j] = PieceType::None;
+
+      if (i == blackPawnIdx) board[i][j] = PieceColor::BLACK | PieceType::Pawn;
+      if (i == whitePawnIdx) board[i][j] = PieceColor::WHITE | PieceType::Pawn;
+    }
+  }
+
+  for (int i = 0; i < 8; i++) {
+    for (int j = 0; j < 8; j++) {
+      cout << board[i][j] << " ";
+    }
+
+    cout << endl;
+  }
+}
+
+PieceType getPieceType(int piece) { return static_cast<PieceType>(piece & TypeMask); }
+
+PieceColor getPieceColor(int piece) { return static_cast<PieceColor>(piece & ColorMask); }
+
+string getPiecePath(int piece) {
+  int color = getPieceColor(piece);
+  PieceType type = getPieceType(piece);
+
+  string path = "assets/pieces/";
+
+  if (color == PieceColor::BLACK) {
+    path.append("black");
+  } else {
+    path.append("white");
+  }
+
+  path.append("-");
+
+  switch (type) {
+  case None:
+    break;
+  case Pawn:
+    path.append("pawn");
+    break;
+  case Bishop:
+    path.append("bishop");
+    break;
+  case Knight:
+    path.append("knight");
+    break;
+  case Rook:
+    path.append("rook");
+    break;
+  case Queen:
+    path.append("queen");
+    break;
+  case King:
+    path.append("king");
+    break;
+  }
+
+  path.append(".png");
+
+  return path;
+}
+
+void createChessBoard(int w, int h) {
 
   // we need to some margin to adjust (10% margin)
   // we can say that our board will be atmost 80% the size of the screen
@@ -161,6 +243,15 @@ void render() {
   }
 }
 
+void render() {
+  int w, h;
+
+  // get the size of window to determine the board size
+  SDL_GetWindowSize(window, &w, &h);
+
+  createChessBoard(w, h);  
+}
+
 void eventLoop() {
 
   bool running = true;
@@ -186,10 +277,16 @@ void close() {
 
 int main() {
 
+  // int blackBishop = PieceType::King | PieceColor::WHITE;
+
+  // cout << getPiecePath(blackBishop) << endl;
+
   if (!init()) {
     cout << "Something went wrong" << endl;
     return 1;
   };
+
+  fillInChessPieces();
 
   render();
 
