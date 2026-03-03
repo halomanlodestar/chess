@@ -2,25 +2,28 @@
 #include <SDL2/SDL_error.h>
 #include <SDL2/SDL_events.h>
 #include <SDL2/SDL_keycode.h>
+#include <SDL2/SDL_pixels.h>
 #include <SDL2/SDL_rect.h>
 #include <SDL2/SDL_render.h>
 #include <SDL2/SDL_surface.h>
 #include <SDL2/SDL_video.h>
+#include <algorithm>
 #include <iostream>
-
-const int SCREEN_WIDTH = 1000;
-const int SCREEN_HEIGHT = 1000;
 
 using namespace std;
 
-const int WIDHT = 1000;
+const int WIDHT = 1500;
 const int HEIGHT = 1000;
+
+// defining square colors!
+const SDL_Color black = {0, 68, 116, 255};
+const SDL_Color white = {251,245,222, 255};
 
 SDL_Window *window = nullptr;
 SDL_Renderer *renderer = nullptr;
 
 bool init() {
-  if (SDL_Init(SDL_INIT_EVERYTHING) == 0) {
+  if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
     cout << SDL_GetError() << endl;
 
     return false;
@@ -47,7 +50,97 @@ bool init() {
   return true;
 }
 
-void render() {}
+void render() {
+
+  int SQUARES = 8;
+  int w, h;
+
+  int startX, startY;
+
+  // get the size of window to determine the board size
+  SDL_GetWindowSize(window, &w, &h);
+
+  // we need to some margin to adjust (10% margin)
+  // we can say that our board will be atmost 80% the size of the screen
+  // 10% margin each size
+  int boardWidth = w * 0.8;
+  int boardHeight = h * 0.8;
+
+  // the issue is these may not work perfectly for 8 pieces so we need to find
+  // since we're making a well, chess board, duh
+  // we need to final the closest lower multiple of 8
+  // to get that we can divide both width and height by 8 and subtract the
+  // remainder to the biggest smaller multiple of 8
+  boardWidth = boardWidth - boardWidth % 8;
+  boardHeight = boardHeight - boardHeight % 8;
+
+  // now that we have our board size, we can finally calculate the checker size
+  // but wait, we fucked up, the board has to be square, this one doesn't
+  // guarantee a square board, so we'll need to pick the min of these two
+  boardWidth = min(boardHeight, boardHeight);
+  boardHeight = boardWidth;
+
+  int pl = 0.1 * w;
+  int pt = 0.1 * h;
+
+  // well the above calc doesn't center the board
+  // to center we can prolly get half of what's remaining off the window size
+  pl = (w - boardWidth) / 2;
+  pt = (h - boardHeight) / 2;
+
+  // perfect, much cleaner
+  // Okay now that we have our final board size, we can prolly try rendering an empty board
+
+  SDL_Rect rect = {pl, pt, boardWidth, boardHeight};
+  
+  SDL_SetRenderDrawColor(renderer, 200, 200, 200, 255);
+  
+  SDL_RenderFillRect(renderer, &rect);
+  
+  SDL_RenderPresent(renderer);
+
+  // finally! now this we just 1 square, we need 64 smaller squares
+  // there is another issue, we need to define 2 colors, not just one
+  // I'll just google a perfect pair of colors in rgba format cuz SDL2 doesn't
+  // support hex colors T_T, to nothingness goes my webd skills
+
+  // first off we start by defining size of each block, which will be well
+  // board size / 8 because we've alrdy made sure that board is a multiple of 8
+  int blockHeight = boardWidth / 8;
+  int blockWidth = blockHeight;
+
+  for (int i = 0; i < SQUARES; i++) {
+
+    // first off we start by defining the position, size is same for all
+    // now comes the nicer part, i'll have to define position of each block, now
+    // there are 8 blocks in each row and there are 8 rows, that'll require
+    // two loops, one for column and one for rows
+    // each loop iterating 8 times defining how much distance we'll need from
+
+    for (int j = 0; j < SQUARES; j++) {
+      // the top left. Oh! I almost forgot i'll have to consider the margin I
+      // initially gave to the board itself.
+      // that'll add the size of each block times number of blocks that we're
+      // before this block, Oh my! I'm gonna get confused thinking about rows
+      // and columns here
+      int blockX = pl + i * blockWidth;
+      int blockY = pt + j * blockHeight;
+      
+      SDL_Rect rect = {blockX, blockY, blockWidth, blockHeight};
+
+      // well its better than the if block
+      SDL_Color currentBlockColor = (i + j) % 2 ? black : white;
+
+      SDL_SetRenderDrawColor(renderer, currentBlockColor.r, currentBlockColor.g, currentBlockColor.b, 255);
+      
+      SDL_RenderFillRect(renderer, &rect);
+
+      SDL_RenderPresent(renderer);
+
+      // well it worked the first try :()
+    }
+  }
+}
 
 void eventLoop() {
 
@@ -72,7 +165,10 @@ void close() {
 
 int main() {
 
-  init();
+  if (!init()) {
+    cout << "Something went wrong" << endl;
+    return 1;
+  };
 
   render();
 
