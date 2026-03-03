@@ -1,6 +1,7 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_error.h>
 #include <SDL2/SDL_events.h>
+#include <SDL2/SDL_keycode.h>
 #include <SDL2/SDL_rect.h>
 #include <SDL2/SDL_render.h>
 #include <SDL2/SDL_surface.h>
@@ -55,13 +56,29 @@ void eventLoop() {
   while (running) {
     SDL_Event e;
 
-    while () {}
+    while (SDL_PollEvent(&e)) {
+      if (e.type == SDL_QUIT) {
+        running = false;
+        break;
+      }
+    }
   }
-
 }
 
-void close() {}
+void close() {
+  SDL_DestroyWindow(window);
+  SDL_DestroyRenderer(renderer);
+}
 
 int main() {
+
+  init();
+
+  render();
+
+  eventLoop();
+
+  close();
+
   return 0;
 }
