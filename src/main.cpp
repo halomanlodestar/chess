@@ -67,7 +67,7 @@ void close() {
   SDL_DestroyWindow(window);
 }
 
-int main(int argc, char *args[]) {
+int main() {
 
   init();
   loadMedia();
