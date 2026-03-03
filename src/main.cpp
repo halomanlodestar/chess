@@ -18,7 +18,7 @@ const int SQUARES = 8;
 const int TypeMask = 0b00111;
 const int ColorMask = 0b11000;
 
-string pieceImages[] = {
+string pieceNames[] = {
     "",
     "pawn",
     "bishop",
@@ -277,7 +277,7 @@ void close() {
 
 int main() {
 
-  // int blackBishop = PieceType::King | PieceColor::WHITE;
+  int whiteKing = PieceType::King | PieceColor::WHITE;
 
   // cout << getPiecePath(blackBishop) << endl;
 
