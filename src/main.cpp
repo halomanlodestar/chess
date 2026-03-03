@@ -161,6 +161,8 @@ void eventLoop() {
 void close() {
   SDL_DestroyWindow(window);
   SDL_DestroyRenderer(renderer);
+
+  SDL_Quit();
 }
 
 int main() {
