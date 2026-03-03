@@ -55,8 +55,6 @@ void render() {
   int SQUARES = 8;
   int w, h;
 
-  int startX, startY;
-
   // get the size of window to determine the board size
   SDL_GetWindowSize(window, &w, &h);
 
