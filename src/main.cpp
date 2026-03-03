@@ -7,6 +7,7 @@
 #include <SDL2/SDL_render.h>
 #include <SDL2/SDL_surface.h>
 #include <SDL2/SDL_video.h>
+#include <SDL2/SDL_image.h>
 #include <algorithm>
 #include <iostream>
 
@@ -17,7 +18,18 @@ const int HEIGHT = 1000;
 
 // defining square colors!
 const SDL_Color black = {0, 68, 116, 255};
-const SDL_Color white = {251,245,222, 255};
+const SDL_Color white = {251, 245, 222, 255};
+
+enum PieceColor { WHITE, BLACK };
+
+enum PieceType {
+  PAWN,
+  BISHOP,
+  KNIGHT,
+  ROOK,
+  QUEEN,
+  KING
+};
 
 SDL_Window *window = nullptr;
 SDL_Renderer *renderer = nullptr;
@@ -43,6 +55,15 @@ bool init() {
     cout << SDL_GetError() << endl;
 
     SDL_DestroyWindow(window);
+
+    return false;
+  }
+
+  if (IMG_Init(IMG_INIT_PNG) != IMG_INIT_PNG) {
+    cout << IMG_GetError() << endl;
+
+    SDL_DestroyWindow(window);
+    SDL_DestroyRenderer(renderer);
 
     return false;
   }
