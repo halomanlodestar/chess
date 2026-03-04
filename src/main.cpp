@@ -180,8 +180,6 @@ void fenStringParser(string fen) {
 
   for (char c : fen) {
 
-    cout << c << " ";
-
     if (c == '/') {
       row++;
       col = 0;
