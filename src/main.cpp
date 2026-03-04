@@ -1,15 +1,9 @@
 #include <SDL2/SDL.h>
-#include <SDL2/SDL_error.h>
-#include <SDL2/SDL_events.h>
-#include <SDL2/SDL_keycode.h>
-#include <SDL2/SDL_pixels.h>
-#include <SDL2/SDL_rect.h>
-#include <SDL2/SDL_render.h>
-#include <SDL2/SDL_surface.h>
-#include <SDL2/SDL_video.h>
 #include <SDL2/SDL_image.h>
-#include <algorithm>
+#include <cctype>
 #include <iostream>
+#include <set>
+#include <string>
 
 using namespace std;
 
@@ -28,14 +22,14 @@ string pieceNames[] = {
     "king"
 };
 
-const int WIDHT = 1500;
-const int HEIGHT = 1000;
+const int WIDHT = 720;
+const int HEIGHT = 720;
 
 // defining square colors!
-const SDL_Color black = {0, 68, 116, 255};
+const SDL_Color black = {173, 95, 35, 255};
 const SDL_Color white = {251, 245, 222, 255};
 
-enum PieceColor { WHITE = 0b01000, BLACK = 0b10000 };
+enum PieceColor { White = 0b01000, Black = 0b10000 };
 
 enum PieceType {
   None = 0b00000,
@@ -89,29 +83,41 @@ bool init() {
   return true;
 }
 
-void fillInChessPieces() {
+int mapFenToPiece(char piece) {
 
-  int blackPawnIdx = 1;
-  int whitePawnIdx = 6;
+  PieceColor color = islower(piece) ? PieceColor::Black : PieceColor::White;
+  PieceType type;
 
-  for (int i = 0; i < 8; i++) {
-    for (int j = 0; j < 8; j++) {
+  piece = std::tolower(piece);
 
-      board[i][j] = PieceType::None;
-
-      if (i == blackPawnIdx) board[i][j] = PieceColor::BLACK | PieceType::Pawn;
-      if (i == whitePawnIdx) board[i][j] = PieceColor::WHITE | PieceType::Pawn;
-    }
+  switch (piece) {
+  case 'p':
+    type = PieceType::Pawn;
+    break;
+  case 'r':
+    type = PieceType::Rook;
+    break;
+  case 'b':
+    type = PieceType::Bishop;
+    break;
+  case 'q':
+    type = PieceType::Queen;
+    break;
+  case 'k':
+    type = PieceType::King;
+    break;
+  case 'n':
+    type = PieceType::Knight;
+    break;
   }
 
-  for (int i = 0; i < 8; i++) {
-    for (int j = 0; j < 8; j++) {
-      cout << board[i][j] << " ";
-    }
+  // type -> 00010
+  // color -> 10000
+  // piece -> 3
 
-    cout << endl;
-  }
+  return type | color;
 }
+
 
 PieceType getPieceType(int piece) { return static_cast<PieceType>(piece & TypeMask); }
 
@@ -123,7 +129,7 @@ string getPiecePath(int piece) {
 
   string path = "assets/pieces/";
 
-  if (color == PieceColor::BLACK) {
+  if (color == PieceColor::Black) {
     path.append("black");
   } else {
     path.append("white");
@@ -159,13 +165,71 @@ string getPiecePath(int piece) {
   return path;
 }
 
+// TODO
+void fenStringParser(string fen) {
+  // a / symbol acts a seperator btw rows
+  // small alphabets -> black
+  // capital -> white
+  // general notation -> xPiecey
+
+  // rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR
+
+  set<char> pieces = {'p', 'r', 'b', 'q', 'k', 'n'};
+
+  int row = 0, col = 0;
+
+  for (char c : fen) {
+
+    cout << c << " ";
+
+    if (c == '/') {
+      row++;
+      col = 0;
+      continue;
+    }
+
+    if (pieces.count(std::tolower(c))) {
+      int p = mapFenToPiece(c);
+
+      board[row][col] = p;
+
+      col++;
+    } else {
+      col += std::tolower(c) - '0';
+    }
+  }
+}
+
+void fillInChessPieces() {
+
+  fenStringParser("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR");
+  // fenStringParser("r1bk3r/p2pBpNp/n4n2/1p1NP2P/6P1/3P4/P1P1K3/q5b1");
+}
+
+
+void renderPiece(int x, int y, int size, string path) {
+  SDL_Texture* texture = IMG_LoadTexture(renderer, path.c_str());
+
+  if (texture == nullptr) {
+    cout << IMG_GetError() << endl;
+
+    return;
+  }
+
+  SDL_Rect rect = {x, y, size, size};
+
+  SDL_RenderCopy(renderer, texture, NULL, &rect);
+
+  SDL_RenderPresent(renderer);
+}
+
 void createChessBoard(int w, int h) {
 
   // we need to some margin to adjust (10% margin)
   // we can say that our board will be atmost 80% the size of the screen
   // 10% margin each size
-  int boardWidth = w * 0.8;
-  int boardHeight = h * 0.8;
+  int boardWidth = w * 0.9;
+  int boardHeight = h * 0.9;
 
   // the issue is these may not work perfectly for 8 pieces so we need to find
   // since we're making a well, chess board, duh
@@ -181,8 +245,8 @@ void createChessBoard(int w, int h) {
   boardWidth = min(boardHeight, boardHeight);
   boardHeight = boardWidth;
 
-  int pl = 0.1 * w;
-  int pt = 0.1 * h;
+  int pl = 0.05 * w;
+  int pt = 0.05 * h;
 
   // well the above calc doesn't center the board
   // to center we can prolly get half of what's remaining off the window size
@@ -224,8 +288,8 @@ void createChessBoard(int w, int h) {
       // that'll add the size of each block times number of blocks that we're
       // before this block, Oh my! I'm gonna get confused thinking about rows
       // and columns here
-      int blockX = pl + i * blockWidth;
-      int blockY = pt + j * blockHeight;
+      int blockY = pt + i * blockWidth;
+      int blockX = pl + j * blockHeight;
       
       SDL_Rect rect = {blockX, blockY, blockWidth, blockHeight};
 
@@ -237,10 +301,16 @@ void createChessBoard(int w, int h) {
       SDL_RenderFillRect(renderer, &rect);
 
       SDL_RenderPresent(renderer);
-
       // well it worked the first try :()
+
+      if (board[i][j] == 0) continue;
+
+      string path = getPiecePath(board[i][j]);
+
+      renderPiece(blockX, blockY, blockHeight, path);
     }
   }
+  
 }
 
 void render() {
@@ -275,11 +345,25 @@ void close() {
   SDL_Quit();
 }
 
+void printBoard() {
+  for (int i = 0; i < 8; i++) {
+    for (int j = 0; j < 8; j++) {
+      cout << board[i][j] << " ";
+    }
+
+    cout << endl;
+  }
+}
+
 int main() {
 
-  int whiteKing = PieceType::King | PieceColor::WHITE;
+  // 10110 -> black bishop -> 18
 
-  // cout << getPiecePath(blackBishop) << endl;
+  int whiteKing = 'k'; // 16+6 -> 22
+
+  // cout << mapFenToPiece(whiteKing) << endl;
+
+  // cout << getPiecePath(whiteKing) << endl;
 
   if (!init()) {
     cout << "Something went wrong" << endl;
@@ -287,6 +371,8 @@ int main() {
   };
 
   fillInChessPieces();
+
+  printBoard();
 
   render();
 
