@@ -1,10 +1,13 @@
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_events.h>
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_render.h>
 #include <cctype>
+#include <glm/ext/vector_float2.hpp>
+#include <glm/glm.hpp>
 #include <iostream>
+#include <optional>
 #include <set>
-#include <string>
 
 using namespace std;
 
@@ -141,10 +144,16 @@ public:
 class Board {
 private:
   const int SQUARES = 8;
+  int top = 0;
+  int left = 0;
+  int size = 0;
+  int height = 0;
+  optional<glm::vec2> selected = std::nullopt;
 
   // defining square colors!
   const SDL_Color black = {173, 95, 35, 255};
   const SDL_Color white = {251, 245, 222, 255};
+  const SDL_Color green = {35, 184, 75, 255};
 
   int board[8][8];
 
@@ -190,36 +199,33 @@ public:
     // we need to some margin to adjust (10% margin)
     // we can say that our board will be atmost 80% the size of the screen
     // 10% margin each size
-    int boardWidth = w * 0.9;
-    int boardHeight = h * 0.9;
+    size = w * 0.9;
+    height = h * 0.9;
 
     // the issue is these may not work perfectly for 8 pieces so we need to find
     // since we're making a well, chess board, duh
     // we need to final the closest lower multiple of 8
     // to get that we can divide both width and height by 8 and subtract the
     // remainder to the biggest smaller multiple of 8
-    boardWidth = boardWidth - boardWidth % 8;
-    boardHeight = boardHeight - boardHeight % 8;
+    size = size - size % 8;
+    height = height - height % 8;
 
     // now that we have our board size, we can finally calculate the checker
     // size but wait, we fucked up, the board has to be square, this one doesn't
     // guarantee a square board, so we'll need to pick the min of these two
-    boardWidth = min(boardHeight, boardHeight);
-    boardHeight = boardWidth;
-
-    int pl = 0.05 * w;
-    int pt = 0.05 * h;
+    size = min(size, size);
+    height = size;
 
     // well the above calc doesn't center the board
     // to center we can prolly get half of what's remaining off the window size
-    pl = (w - boardWidth) / 2;
-    pt = (h - boardHeight) / 2;
+    top = (w - size) / 2;
+    left = (h - height) / 2;
 
     // perfect, much cleaner
     // Okay now that we have our final board size, we can prolly try rendering
     // an empty board
 
-    SDL_Rect rect = {pl, pt, boardWidth, boardHeight};
+    SDL_Rect rect = {left, top, size, height};
 
     SDL_SetRenderDrawColor(renderer, 200, 200, 200, 255);
 
@@ -235,7 +241,7 @@ public:
     // first off we start by defining size of each block, which will be well
     // board size / 8 because we've alrdy made sure that board is a multiple of
     // 8
-    int blockHeight = boardWidth / 8;
+    int blockHeight = size / SQUARES;
     int blockWidth = blockHeight;
 
     for (int i = 0; i < SQUARES; i++) {
@@ -252,13 +258,17 @@ public:
         // that'll add the size of each block times number of blocks that we're
         // before this block, Oh my! I'm gonna get confused thinking about rows
         // and columns here
-        int blockY = pt + i * blockWidth;
-        int blockX = pl + j * blockHeight;
+        int blockY = top + i * blockWidth;
+        int blockX = left + j * blockHeight;
 
         SDL_Rect rect = {blockX, blockY, blockWidth, blockHeight};
 
         // well its better than the if block
         SDL_Color currentBlockColor = (i + j) % 2 ? black : white;
+
+        if (selected.has_value() && selected->x == j && selected->y == i) {
+          currentBlockColor = green;
+        }
 
         SDL_SetRenderDrawColor(renderer, currentBlockColor.r,
                                currentBlockColor.g, currentBlockColor.b, 255);
@@ -279,13 +289,29 @@ public:
   }
 
   void printBoard() {
-    for (int i = 0; i < 8; i++) {
-      for (int j = 0; j < 8; j++) {
+    for (int i = 0; i < SQUARES; i++) {
+      for (int j = 0; j < SQUARES; j++) {
         cout << board[i][j] << " ";
       }
 
       cout << endl;
     }
+  }
+
+  glm::vec2 getSqareIndecies(int x, int y) {
+    int squareSize = height / SQUARES;
+
+    int xOnBoard = x - left;
+    int yOnBoard = y - top;
+
+    int xIndex = xOnBoard / squareSize;
+    int yIndex = yOnBoard / squareSize;
+
+    return glm::vec2(xIndex, yIndex);
+  }
+
+  void handleMouseClick(SDL_MouseButtonEvent event) {
+    selected = getSqareIndecies(event.x, event.y);
   }
 };
 
@@ -362,6 +388,12 @@ public:
         if (e.type == SDL_QUIT) {
           running = false;
           break;
+        }
+
+        switch (e.type) {
+        case SDL_MOUSEBUTTONDOWN:
+          board->handleMouseClick(e.button);
+          render();
         }
       }
     }

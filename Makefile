@@ -1,6 +1,6 @@
 CXX      := g++
-CXXFLAGS := -std=c++17 -Wall -Wextra $(shell sdl2-config --cflags) $(shell pkg-config --cflags SDL2_image)
-LDFLAGS  := $(shell sdl2-config --libs) $(shell pkg-config --libs SDL2_image)
+CXXFLAGS := -std=c++17 -Wall -Wextra $(shell sdl2-config --cflags) $(shell pkg-config --cflags SDL2_image gl)
+LDFLAGS  := $(shell sdl2-config --libs) $(shell pkg-config --libs SDL2_image gl glew)
 
 SRC_DIR  := src
 BUILD_DIR := build
