@@ -311,7 +311,14 @@ public:
   }
 
   void handleMouseClick(SDL_MouseButtonEvent event) {
-    selected = getSqareIndecies(event.x, event.y);
+    auto v2 = getSqareIndecies(event.x, event.y);
+
+    if (selected.has_value() && selected->x == v2.x && selected->y == v2.y) {
+      selected = std::nullopt;
+      return;
+    }
+
+    selected = v2;
   }
 };
 
