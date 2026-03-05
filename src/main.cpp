@@ -8,48 +8,32 @@
 
 using namespace std;
 
-const int SQUARES = 8;
-
-const int TypeMask = 0b00111;
-const int ColorMask = 0b11000;
-
-string pieceNames[] = {
-    "",
-    "pawn",
-    "bishop",
-    "knight",
-    "rook",
-    "queen",
-    "king"
-};
-
-const int WIDHT = 720;
-const int HEIGHT = 720;
-
-// defining square colors!
-const SDL_Color black = {173, 95, 35, 255};
-const SDL_Color white = {251, 245, 222, 255};
-
-enum PieceColor { White = 0b01000, Black = 0b10000 };
-
-enum PieceType {
-  None = 0b00000,
-  Pawn = 0b00001,
-  Bishop = 0b00010,
-  Knight = 0b00011,
-  Rook = 0b00100,
-  Queen = 0b00101,
-  King = 0b00110
-};
-
-
 class Piece {
 
-  private:
+public:
+  enum PieceColor { White = 0b01000, Black = 0b10000 };
+
+  enum PieceType {
+    None = 0b00000,
+    Pawn = 0b00001,
+    Bishop = 0b00010,
+    Knight = 0b00011,
+    Rook = 0b00100,
+    Queen = 0b00101,
+    King = 0b00110
+  };
+
+private:
+  string pieceNames[7] = {"",     "pawn",  "bishop", "knight",
+                          "rook", "queen", "king"};
+
   PieceColor color;
   PieceType type;
 
-  public:
+  static const int TypeMask = 0b00111;
+  static const int ColorMask = 0b11000;
+
+public:
   Piece(int code) {
     this->color = Piece::getPieceColor(code);
     this->type = Piece::getPieceType(code);
@@ -62,7 +46,7 @@ class Piece {
 
     piece = std::tolower(piece);
 
-  switch (piece) {
+    switch (piece) {
     case 'p':
       type = PieceType::Pawn;
       break;
@@ -86,9 +70,13 @@ class Piece {
     return type | color;
   }
 
-  static PieceType getPieceType(int piece) { return static_cast<PieceType>(piece & TypeMask); }
+  static PieceType getPieceType(int piece) {
+    return static_cast<PieceType>(piece & TypeMask);
+  }
 
-  static PieceColor getPieceColor(int piece) { return static_cast<PieceColor>(piece & ColorMask); }
+  static PieceColor getPieceColor(int piece) {
+    return static_cast<PieceColor>(piece & ColorMask);
+  }
 
   static string getPiecePath(int piece) {
     int color = getPieceColor(piece);
@@ -132,9 +120,9 @@ class Piece {
     return path;
   }
 
-  
-  static void renderPiece(SDL_Renderer* renderer, int x, int y, int size, string path) {
-    SDL_Texture* texture = IMG_LoadTexture(renderer, path.c_str());
+  static void renderPiece(SDL_Renderer *renderer, int x, int y, int size,
+                          string path) {
+    SDL_Texture *texture = IMG_LoadTexture(renderer, path.c_str());
 
     if (texture == nullptr) {
       cout << IMG_GetError() << endl;
@@ -151,13 +139,17 @@ class Piece {
 };
 
 class Board {
+private:
+  const int SQUARES = 8;
+
+  // defining square colors!
+  const SDL_Color black = {173, 95, 35, 255};
+  const SDL_Color white = {251, 245, 222, 255};
 
   int board[8][8];
 
 public:
-  Board(string fen) {
-    fenStringParser(fen);
-  }
+  Board(string fen) { fenStringParser(fen); }
 
   void fenStringParser(string fen) {
     // a / symbol acts a seperator btw rows
@@ -193,8 +185,8 @@ public:
     }
   }
 
-  void renderBoard(SDL_Renderer* renderer, int w, int h) {
-    
+  void renderBoard(SDL_Renderer *renderer, int w, int h) {
+
     // we need to some margin to adjust (10% margin)
     // we can say that our board will be atmost 80% the size of the screen
     // 10% margin each size
@@ -209,8 +201,8 @@ public:
     boardWidth = boardWidth - boardWidth % 8;
     boardHeight = boardHeight - boardHeight % 8;
 
-    // now that we have our board size, we can finally calculate the checker size
-    // but wait, we fucked up, the board has to be square, this one doesn't
+    // now that we have our board size, we can finally calculate the checker
+    // size but wait, we fucked up, the board has to be square, this one doesn't
     // guarantee a square board, so we'll need to pick the min of these two
     boardWidth = min(boardHeight, boardHeight);
     boardHeight = boardWidth;
@@ -224,14 +216,15 @@ public:
     pt = (h - boardHeight) / 2;
 
     // perfect, much cleaner
-    // Okay now that we have our final board size, we can prolly try rendering an empty board
+    // Okay now that we have our final board size, we can prolly try rendering
+    // an empty board
 
     SDL_Rect rect = {pl, pt, boardWidth, boardHeight};
-    
+
     SDL_SetRenderDrawColor(renderer, 200, 200, 200, 255);
-    
+
     SDL_RenderFillRect(renderer, &rect);
-    
+
     SDL_RenderPresent(renderer);
 
     // finally! now this we just 1 square, we need 64 smaller squares
@@ -240,17 +233,18 @@ public:
     // support hex colors T_T, to nothingness goes my webd skills
 
     // first off we start by defining size of each block, which will be well
-    // board size / 8 because we've alrdy made sure that board is a multiple of 8
+    // board size / 8 because we've alrdy made sure that board is a multiple of
+    // 8
     int blockHeight = boardWidth / 8;
     int blockWidth = blockHeight;
 
     for (int i = 0; i < SQUARES; i++) {
 
       // first off we start by defining the position, size is same for all
-      // now comes the nicer part, i'll have to define position of each block, now
-      // there are 8 blocks in each row and there are 8 rows, that'll require
-      // two loops, one for column and one for rows
-      // each loop iterating 8 times defining how much distance we'll need from
+      // now comes the nicer part, i'll have to define position of each block,
+      // now there are 8 blocks in each row and there are 8 rows, that'll
+      // require two loops, one for column and one for rows each loop iterating
+      // 8 times defining how much distance we'll need from
 
       for (int j = 0; j < SQUARES; j++) {
         // the top left. Oh! I almost forgot i'll have to consider the margin I
@@ -260,20 +254,22 @@ public:
         // and columns here
         int blockY = pt + i * blockWidth;
         int blockX = pl + j * blockHeight;
-        
+
         SDL_Rect rect = {blockX, blockY, blockWidth, blockHeight};
 
         // well its better than the if block
         SDL_Color currentBlockColor = (i + j) % 2 ? black : white;
 
-        SDL_SetRenderDrawColor(renderer, currentBlockColor.r, currentBlockColor.g, currentBlockColor.b, 255);
-        
+        SDL_SetRenderDrawColor(renderer, currentBlockColor.r,
+                               currentBlockColor.g, currentBlockColor.b, 255);
+
         SDL_RenderFillRect(renderer, &rect);
 
         SDL_RenderPresent(renderer);
         // well it worked the first try :()
 
-        if (board[i][j] == 0) continue;
+        if (board[i][j] == 0)
+          continue;
 
         string path = Piece::getPiecePath(board[i][j]);
 
@@ -297,13 +293,17 @@ class Game {
 private:
   SDL_Window *window = nullptr;
   SDL_Renderer *renderer = nullptr;
-  Board* board;
+  Board *board;
+  int width;
+  int height;
 
 public:
-  Game(string fen) {
+  Game(string fen, int width, int height) {
     board = new Board(fen);
+    this->width = width;
+    this->height = height;
   }
-  
+
   bool init() {
     if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
       cout << SDL_GetError() << endl;
@@ -311,7 +311,9 @@ public:
       return false;
     }
 
-    window = SDL_CreateWindow("Chess Engine", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDHT, HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
+    window = SDL_CreateWindow("Chess Engine", SDL_WINDOWPOS_CENTERED,
+                              SDL_WINDOWPOS_CENTERED, width, height,
+                              SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
 
     if (window == nullptr) {
       cout << SDL_GetError() << endl;
@@ -375,7 +377,11 @@ public:
 
 int main() {
 
-  Game *game = new Game("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR");
+  int HEIGHT = 720;
+  int WIDTH = 720;
+
+  Game *game =
+      new Game("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR", WIDTH, HEIGHT);
 
   if (!game->init()) {
     cout << "Something went wrong" << endl;
