@@ -154,6 +154,7 @@ private:
   const SDL_Color black = {173, 95, 35, 255};
   const SDL_Color white = {251, 245, 222, 255};
   const SDL_Color green = {35, 184, 75, 255};
+  const SDL_Color pieceSelected = {58, 102, 207, 255};
 
   int board[8][8];
 
@@ -267,7 +268,8 @@ public:
         SDL_Color currentBlockColor = (i + j) % 2 ? black : white;
 
         if (selected.has_value() && selected->x == j && selected->y == i) {
-          currentBlockColor = green;
+          bool isAPiece = board[i][j];
+          currentBlockColor = isAPiece ? pieceSelected : green;
         }
 
         SDL_SetRenderDrawColor(renderer, currentBlockColor.r,
@@ -316,6 +318,27 @@ public:
     if (selected.has_value() && selected->x == v2.x && selected->y == v2.y) {
       selected = std::nullopt;
       return;
+    }
+
+    if (selected.has_value()) {
+      bool hasValidPiece = this->board[(int)selected->y][(int)selected->x];
+
+      if (hasValidPiece) {
+
+        int oldX = selected->x;
+        int oldY = selected->y;
+
+        int newX = v2.x;
+        int newY = v2.y;
+
+        auto old = selected;
+        board[newY][newX] = board[oldY][oldX];
+        board[oldY][oldX] = 0;
+
+        selected = std::nullopt;
+
+        return;
+      }
     }
 
     selected = v2;
