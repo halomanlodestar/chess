@@ -2,6 +2,7 @@
 #include <SDL2/SDL_events.h>
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_render.h>
+#include <algorithm>
 #include <cctype>
 #include <glm/ext/vector_float2.hpp>
 #include <glm/glm.hpp>
@@ -10,6 +11,20 @@
 #include <set>
 
 using namespace std;
+
+#include <glm/glm.hpp>
+#include <set>
+
+struct Vec2Comparator {
+  bool operator()(const glm::vec2 &a, const glm::vec2 &b) const {
+    if (a.x != b.x)
+      return a.x < b.x;
+    return a.y < b.y;
+  }
+};
+
+// Definition of the set
+std::set<glm::vec2, Vec2Comparator> mySet;
 
 class Piece {
 
@@ -148,13 +163,15 @@ private:
   int left = 0;
   int size = 0;
   int height = 0;
+  set<glm::vec2, Vec2Comparator> moves;
   optional<glm::vec2> selected = std::nullopt;
 
   // defining square colors!
   const SDL_Color black = {173, 95, 35, 255};
   const SDL_Color white = {251, 245, 222, 255};
-  const SDL_Color green = {35, 184, 75, 255};
+  const SDL_Color emptySelection = {207, 205, 58, 255};
   const SDL_Color pieceSelected = {58, 102, 207, 255};
+  const SDL_Color legalMove = {83, 207, 58, 55};
 
   int board[8][8];
 
@@ -269,7 +286,11 @@ public:
 
         if (selected.has_value() && selected->x == j && selected->y == i) {
           bool isAPiece = board[i][j];
-          currentBlockColor = isAPiece ? pieceSelected : green;
+          currentBlockColor = isAPiece ? pieceSelected : emptySelection;
+        }
+
+        if (moves.count(glm::vec2(i, j))) {
+          currentBlockColor = legalMove;
         }
 
         SDL_SetRenderDrawColor(renderer, currentBlockColor.r,
@@ -300,6 +321,89 @@ public:
     }
   }
 
+  set<glm::vec2, Vec2Comparator> diagonalMoves(int row, int col) {
+    set<glm::vec2, Vec2Comparator> out;
+    int i = row, j = col;
+
+    // tl
+    while (i >= 0 && j >= 0) {
+      out.insert(glm::vec2(i, j));
+      i--, j--;
+    }
+
+    i = row, j = col;
+    // tr
+    while (i >= 0 && SQUARES > j) {
+      out.insert(glm::vec2(i, j));
+      i--, j++;
+    }
+
+    i = row, j = col;
+    // bl
+    while (SQUARES > i && j >= 0) {
+      out.insert(glm::vec2(i, j));
+      i++, j--;
+    }
+
+    i = row, j = col;
+    // br
+    while (i < SQUARES && j < SQUARES) {
+      out.insert(glm::vec2(i, j));
+      i++, j++;
+    }
+
+    return out;
+  }
+
+  set<glm::vec2, Vec2Comparator> plusMoves(int row, int col) {
+    set<glm::vec2, Vec2Comparator> out;
+
+    // horizontal
+    for (int i = 0; i < SQUARES; i++) {
+      out.insert(glm::vec2(row, i));
+    }
+
+    // vertical
+    for (int i = 0; i < SQUARES; i++) {
+      out.insert(glm::vec2(i, col));
+    }
+
+    return out;
+  }
+
+  set<glm::vec2, Vec2Comparator> getLegalMoves(int piece, int row, int col) {
+    Piece::PieceType type = Piece::getPieceType(piece);
+
+    // {(1,2), (2,3)}
+
+    switch (type) {
+    case Piece::None:
+      break;
+    case Piece::Pawn:
+      break;
+    case Piece::Bishop:
+      return diagonalMoves(row, col);
+    case Piece::Knight:
+      break;
+    case Piece::Rook:
+      return plusMoves(row, col);
+    case Piece::Queen: {
+      auto plusPart = plusMoves(row, col);
+      auto diagPart = diagonalMoves(row, col);
+
+      for (auto item : plusPart) {
+        diagPart.insert(item);
+      }
+
+      return diagPart;
+    }
+    case Piece::King:
+      break;
+    }
+
+    return set<glm::vec2, Vec2Comparator>();
+  }
+
   glm::vec2 getSqareIndecies(int x, int y) {
     int squareSize = height / SQUARES;
 
@@ -313,6 +417,7 @@ public:
   }
 
   void handleMouseClick(SDL_MouseButtonEvent event) {
+    moves = {};
     auto v2 = getSqareIndecies(event.x, event.y);
 
     if (selected.has_value() && selected->x == v2.x && selected->y == v2.y) {
@@ -320,10 +425,17 @@ public:
       return;
     }
 
-    if (selected.has_value()) {
-      bool hasValidPiece = this->board[(int)selected->y][(int)selected->x];
+    int previouslySelectedPiece =
+        this->board[(int)selected->y][(int)selected->x];
+    int currentlySelectedPiece = this->board[(int)v2.y][(int)v2.x];
 
-      if (hasValidPiece) {
+    if (currentlySelectedPiece) {
+      moves = getLegalMoves(currentlySelectedPiece, (int)v2.y, (int)v2.x);
+    }
+
+    if (selected.has_value()) {
+
+      if (previouslySelectedPiece) {
 
         int oldX = selected->x;
         int oldY = selected->y;
